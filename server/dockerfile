@@ -1,0 +1,7 @@
+FROM node:current-alpine3.23
+WORKDIR /app
+COPY todo-server/package*.json ./
+RUN npm install --production
+COPY todo-server/ .
+EXPOSE 5000
+CMD ["node", "index.js"]
