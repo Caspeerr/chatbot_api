@@ -1,7 +1,7 @@
 'use strict';
 
 const express   = require('express');
-const cors      = require('cors');  // this connects to frontend
+const cors      = require('cors');
 const morgan    = require('morgan');
 const path      = require('path');
 const fs        = require('fs');
@@ -13,27 +13,24 @@ const logger = require('./logger');
 
 const { TodosController, StatsController, ChatController } = require('./controllers');
 
-/* ── Load OpenAPI spec ───────────────────────────────────── */
 const specPath = path.join(__dirname, 'api', 'openapi.yaml');
 const apiSpec  = jsYaml.load(fs.readFileSync(specPath, 'utf8'));
 
-/* ── Create Express app ──────────────────────────────────── */
 const app = express();
 
-/* ── Global Middleware ───────────────────────────────────── */
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-})); // connect to frontend
+}));
 
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
-/* ── Swagger UI at /api-docs ─────────────────────────────── */
+/* ── Swagger UI — mounted at config.api.docsPath (e.g. /sambrid/api-docs) ── */
 app.use(
-  '/api-docs',
+  config.api.docsPath,
   swaggerUi.serve,
   swaggerUi.setup(apiSpec, {
     customSiteTitle: 'Chat API Docs',
@@ -55,13 +52,11 @@ app.use(
   })
 );
 
-/* ── Serve raw spec as JSON ──────────────────────────────── */
-app.get('/api-docs.json', (req, res) => res.json(apiSpec));
+app.get(`${config.api.docsPath}.json`, (req, res) => res.json(apiSpec));
 
-/* ── API Router ──────────────────────────────────────────── */
+/* ── API Router — mounted at config.api.basePath (e.g. /sambrid/api/v1) ── */
 const router = express.Router();
 
-// Todos — /todos/bulk MUST be registered before /todos/:id
 router.get   ('/todos',        TodosController.listTodos);
 router.post  ('/todos',        TodosController.createTodo);
 router.post  ('/todos/bulk',   TodosController.bulkTodos);
@@ -70,30 +65,33 @@ router.put   ('/todos/:id',    TodosController.replaceTodo);
 router.patch ('/todos/:id',    TodosController.patchTodo);
 router.delete('/todos/:id',    TodosController.deleteTodo);
 
-// Chat
 router.post('/chat', ChatController.chat);
-
-// Stats
 router.get('/stats', StatsController.getStats);
 
-app.use('/api/v1', router);
+app.use(config.api.basePath, router);
 
-/* ── Health ──────────────────────────────────────────────── */
+/* ── Health checks — unprefixed AND prefixed alias ──
+   ALB target group health checks hit the container directly.
+   Keep /health available regardless of prefix config, plus a
+   prefixed alias in case your target group health check path
+   was set to include /sambrid. */
 app.get('/health', (req, res) =>
   res.json({ status: 'ok', uptime: process.uptime(), ts: new Date().toISOString() })
 );
 
-/* ── Root → redirect to docs ─────────────────────────────── */
-app.get('/', (req, res) => res.redirect('/api-docs'));
+const prefixOnly = config.api.basePath.replace('/api/v1', '');
+app.get(`${prefixOnly}/health`, (req, res) =>
+  res.json({ status: 'ok', uptime: process.uptime(), ts: new Date().toISOString() })
+);
 
-/* ── 404 ─────────────────────────────────────────────────── */
+app.get('/', (req, res) => res.redirect(config.api.docsPath));
+
 app.use((req, res) =>
   res.status(404).json({
     error: { code: 'NOT_FOUND', message: `${req.method} ${req.path} not found` },
   })
 );
 
-/* ── Global error handler ────────────────────────────────── */
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   logger.error(err.stack || err.message);
@@ -102,5 +100,4 @@ app.use((err, req, res, next) => {
   });
 });
 
-/* ── Export the express app (NOT a server) ───────────────── */
 module.exports = app;

@@ -5,7 +5,7 @@ const BASE_PREFIX = process.env.BASE_PREFIX || '/sambrid'; // must match ALB pat
 
 const config = {
   port: process.env.PORT || 5000, // matches container_port in tfvars
-  host: process.env.HOST || '0.0.0.0', // '0.0.0.0' not 'localhost' — must bind all interfaces to be reachable inside the ECS task/ALB target group
+  host: process.env.HOST || '0.0.0.0', // must bind all interfaces, not 'localhost', to be reachable from the ALB/ECS network
   env: process.env.NODE_ENV || 'development',
   appName: APP_NAME,
 

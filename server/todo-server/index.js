@@ -11,7 +11,6 @@ const server = app.listen(config.port, () => {
   logger.info(`   ➜ Health   : http://${config.host}:${config.port}/health`);
 });
 
-/* Graceful shutdown */
 const shutdown = (signal) => {
   logger.info(`${signal} received — shutting down gracefully`);
   server.close(() => {
