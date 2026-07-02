@@ -10,8 +10,8 @@ const config = {
   appName: APP_NAME,
 
   api: {
-    basePath: `${BASE_PREFIX}/sambrid/api/v1`,
-    docsPath: `${BASE_PREFIX}/sambrid/api-docs`,//api docs
+    basePath: `/sambrid/api/v1`,
+    docsPath: `/sambrid/api-docs`,//api docs
   },
 
   cors: {
