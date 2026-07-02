@@ -79,7 +79,7 @@ app.get('/health', (req, res) =>
   res.json({ status: 'ok', uptime: process.uptime(), ts: new Date().toISOString() })
 );
 
-const prefixOnly = config.api.basePath.replace('/api/v1', '');
+const prefixOnly = config.api.basePath.replace('/sambrid/api/v1', '');
 app.get(`${prefixOnly}/health`, (req, res) =>
   res.json({ status: 'ok', uptime: process.uptime(), ts: new Date().toISOString() })
 );

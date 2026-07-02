@@ -1,7 +1,7 @@
 'use strict';
 
 const APP_NAME = process.env.APP_NAME || 'sambrid-app';
-const BASE_PREFIX = process.env.BASE_PREFIX || '/sambrid'; // must match ALB path_pattern minus the wildcard
+
 
 const config = {
   port: process.env.PORT || 5000, // matches container_port in tfvars
@@ -10,8 +10,8 @@ const config = {
   appName: APP_NAME,
 
   api: {
-    basePath: `${BASE_PREFIX}/api/v1`,
-    docsPath: `${BASE_PREFIX}/api-docs`,
+    basePath: `${BASE_PREFIX}/sambrid/api/v1`,
+    docsPath: `${BASE_PREFIX}/sambrid/api-docs`,
   },
 
   cors: {
