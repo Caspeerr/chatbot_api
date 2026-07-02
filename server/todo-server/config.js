@@ -1,13 +1,17 @@
 'use strict';
 
+const APP_NAME = process.env.APP_NAME || 'sambrid-app';
+const BASE_PREFIX = process.env.BASE_PREFIX || '/sambrid'; // must match ALB path_pattern minus the wildcard
+
 const config = {
-  port: process.env.PORT || 5000,
-  host: process.env.HOST || 'localhost',
-  env:  process.env.NODE_ENV || 'development',
+  port: process.env.PORT || 5000, // matches container_port in tfvars
+  host: process.env.HOST || '0.0.0.0', // '0.0.0.0' not 'localhost' — must bind all interfaces to be reachable inside the ECS task/ALB target group
+  env: process.env.NODE_ENV || 'development',
+  appName: APP_NAME,
 
   api: {
-    basePath: '/api/v1',
-    docsPath: '/api-docs',
+    basePath: `${BASE_PREFIX}/api/v1`,
+    docsPath: `${BASE_PREFIX}/api-docs`,
   },
 
   cors: {
