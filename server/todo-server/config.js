@@ -11,7 +11,7 @@ const config = {
 
   api: {
     basePath: `${BASE_PREFIX}/sambrid/api/v1`,
-    docsPath: `${BASE_PREFIX}/sambrid/api-docs`,
+    docsPath: `${BASE_PREFIX}/sambrid/api-docs`,//api docs
   },
 
   cors: {
