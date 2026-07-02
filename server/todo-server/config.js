@@ -1,7 +1,7 @@
 'use strict';
 
 const config = {
-  port: process.env.PORT || 4000,
+  port: process.env.PORT || 5000,
   host: process.env.HOST || 'localhost',
   env:  process.env.NODE_ENV || 'development',
 
@@ -11,7 +11,7 @@ const config = {
   },
 
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    origin: process.env.CORS_ORIGIN || 'http://concproject-alb-1190008323.ap-south-1.elb.amazonaws.com',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   },
