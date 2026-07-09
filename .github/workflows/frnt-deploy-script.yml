@@ -1,6 +1,10 @@
 name: Deploy Frontend to S3/CloudFront
 
 on:
+  workflow_run:
+    workflows: ["Deploy ECS"]
+    types: [completed]
+    branches: [main]
   push:
     branches:
       - main
@@ -10,6 +14,7 @@ on:
 
 jobs:
   deploy:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     defaults:
@@ -29,17 +34,34 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build React app
-        env:
-          REACT_APP_API_BASE_URL: ${{ secrets.REACT_APP_API_BASE_URL }}
-        run: npm run build
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Discover backend URL
+        run: |
+          ALB_NAME="${{ secrets.ALB_NAME }}"
+          if [ -z "$ALB_NAME" ]; then
+            ALB_NAME="app-alb-sambrid4"
+          fi
+
+          ALB_DNS=$(aws elbv2 describe-load-balancers --names "$ALB_NAME" --query 'LoadBalancers[0].DNSName' --output text 2>/dev/null || true)
+
+          if [ -n "$ALB_DNS" ]; then
+            BASE_URL="http://$ALB_DNS/sambrid/api/v1"
+          else
+            BASE_URL="${{ secrets.REACT_APP_API_BASE_URL }}"
+          fi
+
+          echo "REACT_APP_API_BASE_URL=$BASE_URL" >> "$GITHUB_ENV"
+
+      - name: Build React app
+        env:
+          REACT_APP_API_BASE_URL: ${{ env.REACT_APP_API_BASE_URL }}
+        run: npm run build
 
       - name: Sync build to S3
         run: |

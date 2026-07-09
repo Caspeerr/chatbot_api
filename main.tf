@@ -248,7 +248,7 @@ resource "aws_lb_target_group" "server" {
     unhealthy_threshold = 2
     timeout             = 3
     interval            = 30
-    path                = "/"
+    path                = "/health"
     matcher             = "200"
   }
 }
@@ -277,7 +277,7 @@ resource "aws_lb_listener_rule" "server" {
 
   condition {
     path_pattern {
-      values = ["/api/*"]
+      values = ["/sambrid/api/*"]
     }
   }
 }
