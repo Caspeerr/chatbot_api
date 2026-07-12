@@ -1,1 +1,1 @@
-terraform script deploy
+terraform script deployy
