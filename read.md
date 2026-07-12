@@ -1,1 +1,1 @@
-terraform script deployy 2
+terraform script deployy 
