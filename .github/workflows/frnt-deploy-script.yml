@@ -13,8 +13,38 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  scan:
+    name: Trivy Vulnerability Scan
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: 'fs'
+          scan-ref: 'client/'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
+          format: 'table'
+          # Output SARIF for GitHub Security tab integration
+          output: 'trivy-results.sarif'
+        # Continue to upload artifact even if Trivy finds vulnerabilities
+        continue-on-error: false
+
+      - name: Upload Trivy scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-scan-results
+          path: trivy-results.sarif
+          retention-days: 30
+
+  deploy:
+    name: Build & Deploy
+    needs: scan
     runs-on: ubuntu-latest
 
     defaults:
@@ -39,28 +69,12 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION || 'ap-south-1' }}
-
-      - name: Discover backend URL
-        run: |
-          ALB_NAME="${{ secrets.ALB_NAME }}"
-          if [ -z "$ALB_NAME" ]; then
-            ALB_NAME="app-alb-sambrid4"
-          fi
-
-          ALB_DNS=$(aws elbv2 describe-load-balancers --names "$ALB_NAME" --query 'LoadBalancers[0].DNSName' --output text 2>/dev/null || true)
-
-          if [ -n "$ALB_DNS" ]; then
-            BASE_URL="http://$ALB_DNS/sambrid/api/v1"
-          else
-            BASE_URL="${{ secrets.REACT_APP_API_BASE_URL }}"
-          fi
-
-          echo "REACT_APP_API_BASE_URL=$BASE_URL" >> "$GITHUB_ENV"
+          aws-region: ap-south-1
 
       - name: Build React app
         env:
-          REACT_APP_API_BASE_URL: ${{ env.REACT_APP_API_BASE_URL }}
+          # CRA inlines this at build time — must be set here, not at runtime
+          REACT_APP_API_BASE_URL: ${{ secrets.REACT_APP_API_BASE_URL }}
         run: npm run build
 
       - name: Sync build to S3
