@@ -1,1 +1,1 @@
-terraform script deployy v8
+terraform script deployy v9
